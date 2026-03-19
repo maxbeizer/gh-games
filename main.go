@@ -38,6 +38,7 @@ func main() {
 
 	rootCmd.AddCommand(cmd.NewGuessCmd())
 	rootCmd.AddCommand(cmd.NewGroupCmd())
+	rootCmd.AddCommand(cmd.NewHiveCmd())
 
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		userMessages.Printf("error: %v", err)
