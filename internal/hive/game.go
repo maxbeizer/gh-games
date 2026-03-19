@@ -87,7 +87,7 @@ func newGameFromLetters(letters [7]rune) *Game {
 
 // Guess validates and scores a player's guess.
 func (g *Game) Guess(word string) (points int, pangram bool, err error) {
-	word = strings.ToLower(strings.TrimSpace(word))
+	word = strings.ToUpper(strings.TrimSpace(word))
 	runes := []rune(word)
 
 	if len(runes) < 4 {
@@ -188,7 +188,7 @@ func isPangramWord(word string, letters [7]rune) bool {
 func uniqueLetters(word string) []rune {
 	seen := make(map[rune]bool)
 	var out []rune
-	for _, r := range strings.ToLower(word) {
+	for _, r := range strings.ToUpper(word) {
 		if !seen[r] {
 			seen[r] = true
 			out = append(out, r)
