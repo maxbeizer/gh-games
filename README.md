@@ -1,61 +1,48 @@
-# gh-extension-template
+# 🎮 gh-games
 
-A template for building [GitHub CLI](https://cli.github.com/) extensions in Go.
+Terminal games as a GitHub CLI extension. Play right from your command line!
 
-## Using this template
+## Install
 
-1. Create a new repo from this template:
-   ```bash
-   gh repo create my-org/gh-my-extension --template maxbeizer/gh-extension-template --private --clone
-   cd gh-my-extension
-   ```
+```sh
+gh extension install maxbeizer/gh-games
+```
 
-2. Update these files:
-   - **`go.mod`** — change the module path to your repo
-   - **`Makefile`** — change `EXTENSION_NAME` to your extension name (without `gh-` prefix)
-   - **`.goreleaser.yml`** — change `project_name` and `binary` to `gh-<your-name>`
-   - **`main.go`** — change `Use` field and implement your commands
+## Games
 
-3. Verify everything works:
-   ```bash
-   make ci
-   make install-local
-   gh my-extension
-   ```
+### 🟩 Guess
+
+Guess the hidden 5-letter word in 6 tries. After each guess, letters are colored:
+- 🟩 **Green** — correct letter, correct position
+- 🟨 **Yellow** — correct letter, wrong position  
+- ⬜ **Gray** — letter not in the word
+
+```sh
+gh games guess           # Daily word (same for everyone today)
+gh games guess --random  # Fresh random word
+gh games guess --hard    # Guesses must be real words
+```
+
+### 🔗 Group
+
+Find four groups of four related words among sixteen. Groups are color-coded by difficulty:
+- 🟨 Yellow (easy) → 🟩 Green → 🟦 Blue → 🟪 Purple (expert)
+
+4 mistakes and it's game over!
+
+```sh
+gh games group
+```
 
 ## Development
 
-```bash
-make help          # see all targets
-make build         # build binary
-make test          # run tests
-make ci            # build + vet + test-race
-make install-local # install extension from checkout
-make relink-local  # reinstall after changes
+```sh
+make build         # Build binary
+make test          # Run tests
+make ci            # Build + vet + test with race detector
+make install-local # Install from local checkout
 ```
 
-## Releasing
+## License
 
-Tag a version to trigger a release build:
-
-```bash
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-The GitHub Actions workflow uses [goreleaser](https://goreleaser.com/) to build binaries for darwin/linux (amd64/arm64) and create a GitHub release. Once released, users install with:
-
-```bash
-gh extension install my-org/gh-my-extension
-```
-
-## What's included
-
-| File | Purpose |
-|------|---------|
-| `Makefile` | Build, test, lint, install targets |
-| `.goreleaser.yml` | Cross-platform binary releases |
-| `.github/workflows/release.yml` | Automated releases on tag push |
-| `.github/workflows/ci.yml` | CI on push/PR to main |
-| `main.go` | Minimal starter with cobra + signal handling |
-| `.gitignore` | Go/editor/OS ignores |
+MIT
