@@ -2,7 +2,6 @@ package common
 
 import (
 	"fmt"
-	"net/http"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -48,49 +47,25 @@ func CopyToClipboard(text string) error {
 	return cmd.Run()
 }
 
-// WebhookFormat determines the payload format from a URL.
-type WebhookFormat int
-
-const (
-	FormatSlack   WebhookFormat = iota // {"text": "..."}
-	FormatDiscord                      // {"content": "..."}
-	FormatGeneric                      // {"text": "..."}
-)
-
-// DetectFormat guesses the webhook payload format from the URL.
-func DetectFormat(url string) WebhookFormat {
-	if strings.Contains(url, "discord.com") {
-		return FormatDiscord
+// IsGhSlackInstalled reports whether the gh-slack extension is available.
+func IsGhSlackInstalled() bool {
+	_, err := exec.LookPath("gh")
+	if err != nil {
+		return false
 	}
-	return FormatSlack
+	out, err := exec.Command("gh", "extension", "list").Output()
+	if err != nil {
+		return false
+	}
+	return strings.Contains(string(out), "gh-slack")
 }
 
-// PostToWebhook POSTs the share text to a webhook URL with auto-detected format.
-func PostToWebhook(url, text string) error {
-	format := DetectFormat(url)
-
-	var key string
-	switch format {
-	case FormatDiscord:
-		key = "content"
-	default:
-		key = "text"
-	}
-
-	// Escape for JSON: backslash, double-quote, newlines.
-	escaped := strings.ReplaceAll(text, `\`, `\\`)
-	escaped = strings.ReplaceAll(escaped, `"`, `\"`)
-	escaped = strings.ReplaceAll(escaped, "\n", `\n`)
-	payload := fmt.Sprintf(`{"%s": "%s"}`, key, escaped)
-
-	resp, err := http.Post(url, "application/json", strings.NewReader(payload)) //nolint:gosec
+// PostViaGhSlack sends a message to a Slack channel using the gh-slack extension.
+func PostViaGhSlack(channel, message string) error {
+	cmd := exec.Command("gh", "slack", "send", "-c", channel, "-m", message)
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("webhook POST failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("webhook returned status %d", resp.StatusCode)
+		return fmt.Errorf("gh-slack send failed: %s: %w", string(output), err)
 	}
 	return nil
 }

@@ -55,26 +55,6 @@ func TestShareResultString_EmptyLines(t *testing.T) {
 	}
 }
 
-func TestDetectFormat(t *testing.T) {
-	tests := []struct {
-		name string
-		url  string
-		want WebhookFormat
-	}{
-		{"slack webhook", "https://hooks.slack.com/services/T00/B00/xxxx", FormatSlack},
-		{"discord webhook", "https://discord.com/api/webhooks/123/abc", FormatDiscord},
-		{"generic URL", "https://example.com/webhook", FormatSlack},
-		{"empty string", "", FormatSlack},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := DetectFormat(tt.url); got != tt.want {
-				t.Errorf("DetectFormat(%q) = %d, want %d", tt.url, got, tt.want)
-			}
-		})
-	}
-}
-
 func TestCopyToClipboard_Smoke(t *testing.T) {
 	if runtime.GOOS != "darwin" {
 		t.Skip("clipboard test only runs on macOS")
@@ -86,29 +66,26 @@ func TestCopyToClipboard_Smoke(t *testing.T) {
 	}
 }
 
+func TestIsGhSlackInstalled_NoPanic(t *testing.T) {
+	// Just verify it runs without panicking; result depends on environment.
+	_ = IsGhSlackInstalled()
+}
+
 func TestLoadConfig_MissingFile(t *testing.T) {
 	cfg := loadConfigFrom("/nonexistent/path/config.toml")
-	if len(cfg.Share.Webhooks) != 0 {
-		t.Errorf("expected no webhooks, got %d", len(cfg.Share.Webhooks))
-	}
-	if cfg.Share.Default != "" {
-		t.Errorf("expected empty default, got %q", cfg.Share.Default)
+	if cfg.Share.SlackChannel != "" {
+		t.Errorf("expected empty slack_channel, got %q", cfg.Share.SlackChannel)
 	}
 }
 
-func TestLoadConfig_ParsesWebhooks(t *testing.T) {
+func TestLoadConfig_ParsesSlackChannel(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.toml")
 
 	content := `# gh-games config
 
-[[share.webhooks]]
-name = "slack"
-url = "https://hooks.slack.com/services/T/B/x"
-
-[[share.webhooks]]
-name = "discord"
-url = "https://discord.com/api/webhooks/123/abc"
+[share]
+slack_channel = "fun-games"
 `
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatal(err)
@@ -116,20 +93,8 @@ url = "https://discord.com/api/webhooks/123/abc"
 
 	cfg := loadConfigFrom(path)
 
-	if len(cfg.Share.Webhooks) != 2 {
-		t.Fatalf("expected 2 webhooks, got %d", len(cfg.Share.Webhooks))
-	}
-	if cfg.Share.Webhooks[0].Name != "slack" {
-		t.Errorf("webhook[0].Name = %q, want slack", cfg.Share.Webhooks[0].Name)
-	}
-	if cfg.Share.Webhooks[0].URL != "https://hooks.slack.com/services/T/B/x" {
-		t.Errorf("webhook[0].URL = %q", cfg.Share.Webhooks[0].URL)
-	}
-	if cfg.Share.Webhooks[1].Name != "discord" {
-		t.Errorf("webhook[1].Name = %q, want discord", cfg.Share.Webhooks[1].Name)
-	}
-	if cfg.Share.Webhooks[1].URL != "https://discord.com/api/webhooks/123/abc" {
-		t.Errorf("webhook[1].URL = %q", cfg.Share.Webhooks[1].URL)
+	if cfg.Share.SlackChannel != "fun-games" {
+		t.Errorf("slack_channel = %q, want %q", cfg.Share.SlackChannel, "fun-games")
 	}
 }
 
@@ -140,8 +105,7 @@ func TestLoadConfig_MalformedFile(t *testing.T) {
 	// Garbled content — should not panic, just return zero-value or partial config.
 	content := `not valid toml at all }{{{
 === garbage ===
-[[share.webhooks
-name "missing equals"
+slack_channel missing equals
 `
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatal(err)

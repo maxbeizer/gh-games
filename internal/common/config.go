@@ -7,16 +7,9 @@ import (
 	"strings"
 )
 
-// WebhookConfig holds a named webhook destination.
-type WebhookConfig struct {
-	Name string
-	URL  string
-}
-
 // ShareConfig holds sharing preferences.
 type ShareConfig struct {
-	Default  string          // "clipboard" or a webhook name
-	Webhooks []WebhookConfig
+	SlackChannel string // channel name for gh-slack
 }
 
 // Config is the top-level application configuration.
@@ -25,7 +18,7 @@ type Config struct {
 }
 
 // LoadConfig loads config from ~/.config/gh-games/config.toml.
-// Returns a zero-value Config (no webhooks) if the file doesn't exist.
+// Returns a zero-value Config if the file doesn't exist.
 func LoadConfig() Config {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -43,8 +36,6 @@ func loadConfigFrom(path string) Config {
 	defer f.Close()
 
 	var cfg Config
-	var cur *WebhookConfig
-
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
@@ -54,38 +45,14 @@ func loadConfigFrom(path string) Config {
 			continue
 		}
 
-		if line == "[[share.webhooks]]" {
-			// Flush previous entry.
-			if cur != nil {
-				cfg.Share.Webhooks = append(cfg.Share.Webhooks, *cur)
-			}
-			cur = &WebhookConfig{}
-			continue
-		}
-
 		key, val, ok := parseTOMLKV(line)
 		if !ok {
 			continue
 		}
 
-		if cur != nil {
-			switch key {
-			case "name":
-				cur.Name = val
-			case "url":
-				cur.URL = val
-			}
-		} else {
-			// Top-level share keys.
-			if key == "share.default" || key == "default" {
-				cfg.Share.Default = val
-			}
+		if key == "slack_channel" {
+			cfg.Share.SlackChannel = val
 		}
-	}
-
-	// Flush last entry.
-	if cur != nil {
-		cfg.Share.Webhooks = append(cfg.Share.Webhooks, *cur)
 	}
 
 	return cfg

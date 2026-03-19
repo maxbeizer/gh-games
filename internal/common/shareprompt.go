@@ -1,7 +1,5 @@
 package common
 
-import "fmt"
-
 // SharePromptState tracks the share prompt lifecycle.
 type SharePromptState int
 
@@ -13,19 +11,22 @@ const (
 
 // SharePrompt is a reusable Bubbletea sub-model for post-game sharing.
 type SharePrompt struct {
-	State   SharePromptState
-	Result  ShareResult
-	Config  Config
-	Message string // confirmation message like "✓ Copied!"
+	State      SharePromptState
+	Result     ShareResult
+	Config     Config
+	Message    string // confirmation message like "✓ Copied!"
+	slackReady bool   // gh-slack installed AND channel configured
 }
 
 // NewSharePrompt creates a share prompt ready to display options.
 func NewSharePrompt(result ShareResult) SharePrompt {
 	cfg := LoadConfig()
+	slackReady := IsGhSlackInstalled() && cfg.Share.SlackChannel != ""
 	return SharePrompt{
-		State:  SharePrompting,
-		Result: result,
-		Config: cfg,
+		State:      SharePrompting,
+		Result:     result,
+		Config:     cfg,
+		slackReady: slackReady,
 	}
 }
 
@@ -42,20 +43,18 @@ func (s SharePrompt) HandleKey(key string) (SharePrompt, bool) {
 				s.Message = "✓ Copied to clipboard!"
 			}
 			s.State = ShareDone
-		case "n", "esc":
-			return s, true
-		case "1", "2", "3", "4", "5", "6", "7", "8", "9":
-			idx := int(key[0] - '1')
-			if idx < len(s.Config.Share.Webhooks) {
-				wh := s.Config.Share.Webhooks[idx]
-				err := PostToWebhook(wh.URL, s.Result.String())
+		case "s":
+			if s.slackReady {
+				err := PostViaGhSlack(s.Config.Share.SlackChannel, s.Result.String())
 				if err != nil {
-					s.Message = "✗ Failed: " + err.Error()
+					s.Message = "✗ " + err.Error()
 				} else {
-					s.Message = "✓ Posted to " + wh.Name + "!"
+					s.Message = "✓ Posted to #" + s.Config.Share.SlackChannel + "!"
 				}
 				s.State = ShareDone
 			}
+		case "n", "esc":
+			return s, true
 		}
 	case ShareDone:
 		return s, true // any key quits after confirmation
@@ -68,8 +67,8 @@ func (s SharePrompt) View() string {
 	switch s.State {
 	case SharePrompting:
 		line := "Share results? [C]opy to clipboard"
-		for i, wh := range s.Config.Share.Webhooks {
-			line += fmt.Sprintf(" · [%d] %s", i+1, wh.Name)
+		if s.slackReady {
+			line += " · [S]lack"
 		}
 		line += " · [N]o"
 		return HelpStyle.Render(line)
