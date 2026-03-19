@@ -46,3 +46,5 @@ make install-local # Install from local checkout
 ## License
 
 MIT
+
+This project is not affiliated with the New York Times or any other company ⚖️
