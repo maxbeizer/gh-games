@@ -23,9 +23,10 @@ var (
 
 // Model is the Bubbletea model for the Ladder game.
 type Model struct {
-	Game  *Game
-	input string
-	err   string
+	Game        *Game
+	input       string
+	err         string
+	sharePrompt *common.SharePrompt
 }
 
 // NewModel creates a new Ladder game TUI model.
@@ -42,6 +43,15 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		if m.sharePrompt != nil {
+			prompt, quit := m.sharePrompt.HandleKey(msg.String())
+			m.sharePrompt = &prompt
+			if quit {
+				return m, tea.Quit
+			}
+			return m, nil
+		}
+
 		if m.Game.IsWon() {
 			if msg.Type == tea.KeyEsc || msg.Type == tea.KeyCtrlC {
 				return m, tea.Quit
@@ -69,6 +79,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.err = err.Error()
 			} else {
 				m.err = ""
+				if m.Game.IsWon() {
+					sp := common.NewSharePrompt(m.Game.Summary())
+					m.sharePrompt = &sp
+				}
 			}
 			m.input = ""
 
@@ -110,7 +124,11 @@ func (m Model) View() string {
 			b.WriteString(common.SuccessStyle.Render(" ⭐ Optimal!"))
 		}
 		b.WriteString("\n")
-		b.WriteString(common.HelpStyle.Render("Press ESC to quit."))
+		if m.sharePrompt != nil {
+			b.WriteString(m.sharePrompt.View())
+		} else {
+			b.WriteString(common.HelpStyle.Render("Press ESC to quit."))
+		}
 	} else {
 		// Step counter
 		optStr := ""

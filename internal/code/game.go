@@ -1,8 +1,12 @@
 package code
 
 import (
+	"fmt"
 	"math/rand"
+	"strings"
 	"time"
+
+	"github.com/maxbeizer/gh-games/internal/common"
 )
 
 // Color represents one of six peg colors.
@@ -176,4 +180,36 @@ func ComputeFeedback(secret, guess [CodeLen]Color) Feedback {
 	}
 
 	return fb
+}
+
+// Summary returns a spoiler-free shareable result.
+func (g *Game) Summary() common.ShareResult {
+	title := "🔐 Code: "
+	if g.IsWon() {
+		title += fmt.Sprintf("Cracked in %d", len(g.Guesses))
+	} else {
+		title += "Failed ❌"
+	}
+
+	lines := make([]string, len(g.Guesses))
+	for i, guess := range g.Guesses {
+		var b strings.Builder
+		for j := 0; j < guess.Feedback.Exact; j++ {
+			b.WriteString("●")
+		}
+		for j := 0; j < guess.Feedback.Misplaced; j++ {
+			b.WriteString("○")
+		}
+		nothings := CodeLen - guess.Feedback.Exact - guess.Feedback.Misplaced
+		for j := 0; j < nothings; j++ {
+			b.WriteString("⚫")
+		}
+		lines[i] = b.String()
+	}
+
+	return common.ShareResult{
+		Game:  "🔐 Code",
+		Title: title,
+		Lines: lines,
+	}
 }

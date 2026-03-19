@@ -13,10 +13,11 @@ const gridCols = 4
 
 // Model is the Bubbletea model for the Group game.
 type Model struct {
-	game     *Game
-	cursor   int
-	message  string
-	gameOver bool
+	game        *Game
+	cursor      int
+	message     string
+	gameOver    bool
+	sharePrompt *common.SharePrompt
 }
 
 // NewModel creates a Model with a fresh game.
@@ -29,6 +30,14 @@ func (m Model) Init() tea.Cmd { return nil }
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.gameOver {
 		if msg, ok := msg.(tea.KeyMsg); ok {
+			if m.sharePrompt != nil {
+				prompt, quit := m.sharePrompt.HandleKey(msg.String())
+				m.sharePrompt = &prompt
+				if quit {
+					return m, tea.Quit
+				}
+				return m, nil
+			}
 			switch msg.String() {
 			case "q", "esc", "ctrl+c":
 				return m, tea.Quit
@@ -88,6 +97,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			if m.game.IsOver() {
 				m.gameOver = true
+				sp := common.NewSharePrompt(m.game.Summary())
+				m.sharePrompt = &sp
 			}
 		}
 	}
@@ -139,7 +150,11 @@ func (m Model) View() string {
 			b.WriteString(common.ErrorStyle.Render("😔 Better luck next time!"))
 		}
 		b.WriteString("\n\n")
-		b.WriteString(common.HelpStyle.Render("Press Q or ESC to quit"))
+		if m.sharePrompt != nil {
+			b.WriteString(m.sharePrompt.View())
+		} else {
+			b.WriteString(common.HelpStyle.Render("Press Q or ESC to quit"))
+		}
 		return b.String()
 	}
 

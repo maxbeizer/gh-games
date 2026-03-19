@@ -2,7 +2,11 @@ package group
 
 import (
 	"errors"
+	"fmt"
 	"sort"
+	"strings"
+
+	"github.com/maxbeizer/gh-games/internal/common"
 )
 
 var (
@@ -165,4 +169,34 @@ func slicesEqual(a, b []string) bool {
 		}
 	}
 	return true
+}
+
+// Summary returns a spoiler-free shareable result.
+func (g *Game) Summary() common.ShareResult {
+	title := "🔗 Group"
+	if g.IsWon() {
+		title += " ✓"
+	} else if g.IsLost() {
+		title += " ❌"
+	}
+
+	diffEmoji := map[Difficulty]string{
+		Easy:   "🟨",
+		Medium: "🟩",
+		Hard:   "🟦",
+		Expert: "🟪",
+	}
+
+	var lines []string
+	for _, cat := range g.SolvedGroups {
+		e := diffEmoji[cat.Difficulty]
+		lines = append(lines, strings.Repeat(e, 4))
+	}
+	lines = append(lines, fmt.Sprintf("Mistakes: %d/%d", g.Mistakes, g.MaxMistakes))
+
+	return common.ShareResult{
+		Game:  "🔗 Group",
+		Title: title,
+		Lines: lines,
+	}
 }

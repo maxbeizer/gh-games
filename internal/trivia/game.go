@@ -1,6 +1,11 @@
 package trivia
 
-import "math/rand"
+import (
+	"fmt"
+	"math/rand"
+
+	"github.com/maxbeizer/gh-games/internal/common"
+)
 
 // QuestionResult stores the player's answer alongside the question.
 type QuestionResult struct {
@@ -87,4 +92,39 @@ func (g *Game) Current() int {
 // Results returns the detailed results for each answered question.
 func (g *Game) Results() []QuestionResult {
 	return g.results
+}
+
+// Summary returns a spoiler-free shareable result.
+func (g *Game) Summary() common.ShareResult {
+	pct := 0
+	if g.Total() > 0 {
+		pct = g.Score() * 100 / g.Total()
+	}
+
+	var grade string
+	switch {
+	case pct == 100:
+		grade = "🏆 Perfect!"
+	case pct >= 90:
+		grade = "🌟 Amazing!"
+	case pct >= 80:
+		grade = "🎉 Great!"
+	case pct >= 70:
+		grade = "👍 Good job!"
+	case pct >= 50:
+		grade = "😅 Not bad!"
+	case pct >= 30:
+		grade = "📚 Keep studying!"
+	default:
+		grade = "❌ Better luck next time"
+	}
+
+	return common.ShareResult{
+		Game:  "🧠 Trivia",
+		Title: "🧠 Trivia",
+		Lines: []string{
+			fmt.Sprintf("Score: %d/%d (%d%%)", g.Score(), g.Total(), pct),
+			grade,
+		},
+	}
 }

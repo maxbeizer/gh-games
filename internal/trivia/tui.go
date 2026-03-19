@@ -60,10 +60,11 @@ const (
 
 // Model is the Bubbletea model for the Trivia game.
 type Model struct {
-	game     *Game
-	cursor   int   // 0-3 selected choice
-	phase    phase // current display phase
+	game        *Game
+	cursor      int   // 0-3 selected choice
+	phase       phase // current display phase
 	lastCorrect bool
+	sharePrompt *common.SharePrompt
 }
 
 // NewModel creates a new Trivia TUI model.
@@ -109,6 +110,8 @@ func (m Model) updateAnswering(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.lastCorrect = m.game.Answer(m.cursor)
 		if m.game.IsComplete() {
 			m.phase = phaseDone
+			sp := common.NewSharePrompt(m.game.Summary())
+			m.sharePrompt = &sp
 		} else {
 			m.phase = phaseRevealed
 		}
@@ -139,6 +142,14 @@ func (m Model) updateRevealed(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) updateDone(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if m.sharePrompt != nil {
+		prompt, quit := m.sharePrompt.HandleKey(msg.String())
+		m.sharePrompt = &prompt
+		if quit {
+			return m, tea.Quit
+		}
+		return m, nil
+	}
 	switch msg.Type {
 	case tea.KeyCtrlC, tea.KeyEsc, tea.KeyEnter, tea.KeySpace:
 		return m, tea.Quit
@@ -299,7 +310,11 @@ func (m Model) renderDone(b *strings.Builder) {
 		}
 	}
 
-	b.WriteString(common.HelpStyle.Render("Press Enter or ESC to quit"))
+	if m.sharePrompt != nil {
+		b.WriteString(m.sharePrompt.View())
+	} else {
+		b.WriteString(common.HelpStyle.Render("Press Enter or ESC to quit"))
+	}
 	b.WriteString("\n")
 }
 

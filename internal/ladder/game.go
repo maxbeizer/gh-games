@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/rand"
 	"strings"
+
+	"github.com/maxbeizer/gh-games/internal/common"
 )
 
 // Pre-computed solvable start/end pairs with known optimal path lengths.
@@ -267,4 +269,26 @@ func FindShortestPath(start, end string, wordSet map[string]bool) []string {
 	}
 
 	return nil
+}
+
+// Summary returns a spoiler-free shareable result.
+func (g *Game) Summary() common.ShareResult {
+	var line string
+	if g.IsWon() {
+		steps := g.StepCount()
+		line = fmt.Sprintf("Solved in %d steps", steps)
+		if g.IsOptimal() {
+			line += " ⭐ Optimal!"
+		} else {
+			line = fmt.Sprintf("Steps: %d (optimal: %d)", steps, g.Optimal)
+		}
+	} else {
+		line = fmt.Sprintf("In progress — %d steps so far", g.StepCount())
+	}
+
+	return common.ShareResult{
+		Game:  "🪜 Ladder",
+		Title: "🪜 Ladder",
+		Lines: []string{line},
+	}
 }

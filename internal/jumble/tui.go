@@ -21,6 +21,7 @@ type Model struct {
 	messageGood bool
 	lastPoints  int
 	showSummary bool
+	sharePrompt *common.SharePrompt
 }
 
 // NewModel creates a new Jumble game TUI model.
@@ -46,8 +47,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tickCmd()
 
 	case tea.KeyMsg:
-		// Summary screen — any key quits
+		// Summary screen — share prompt or quit
 		if m.showSummary {
+			if m.sharePrompt != nil {
+				prompt, quit := m.sharePrompt.HandleKey(msg.String())
+				m.sharePrompt = &prompt
+				if quit {
+					return m, tea.Quit
+				}
+				return m, nil
+			}
 			return m, tea.Quit
 		}
 
@@ -61,6 +70,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case tea.KeyEnter:
 				if !m.Game.NextRound() {
 					m.showSummary = true
+					sp := common.NewSharePrompt(m.Game.Summary())
+					m.sharePrompt = &sp
 				}
 				m.input = ""
 				m.message = ""
@@ -276,7 +287,11 @@ func (m Model) renderSummary() string {
 	b.WriteString(summaryHeaderStyle.Render(
 		fmt.Sprintf("🏆 Total Score: %d", m.Game.TotalScore)))
 	b.WriteString("\n\n")
-	b.WriteString(common.HelpStyle.Render("Press any key to quit."))
+	if m.sharePrompt != nil {
+		b.WriteString(m.sharePrompt.View())
+	} else {
+		b.WriteString(common.HelpStyle.Render("Press any key to quit."))
+	}
 	b.WriteString("\n")
 
 	return b.String()

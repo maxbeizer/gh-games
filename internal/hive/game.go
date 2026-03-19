@@ -5,6 +5,8 @@ import (
 	"math/rand"
 	"sort"
 	"strings"
+
+	"github.com/maxbeizer/gh-games/internal/common"
 )
 
 // Game represents a Hive word puzzle game.
@@ -224,4 +226,29 @@ func randomPangramCandidate() string {
 		return ""
 	}
 	return pangramCandidates[rand.Intn(len(pangramCandidates))]
+}
+
+// Summary returns a spoiler-free shareable result.
+func (g *Game) Summary() common.ShareResult {
+	pangrams := 0
+	for _, w := range g.Found {
+		if g.IsPangram(w) {
+			pangrams++
+		}
+	}
+
+	lines := []string{
+		fmt.Sprintf("Score: %d/%d · %s", g.Score, g.MaxScore, g.Rank()),
+		fmt.Sprintf("Words: %d/%d", len(g.Found), len(g.AllValid)),
+		fmt.Sprintf("🐝 %d pangram found", pangrams),
+	}
+	if pangrams != 1 {
+		lines[2] = fmt.Sprintf("🐝 %d pangrams found", pangrams)
+	}
+
+	return common.ShareResult{
+		Game:  "🐝 Hive",
+		Title: "🐝 Hive",
+		Lines: lines,
+	}
 }

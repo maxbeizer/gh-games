@@ -57,6 +57,7 @@ type Model struct {
 	showGiveUp     bool
 	givenUp        bool
 	letterSet      map[rune]bool
+	sharePrompt    *common.SharePrompt
 }
 
 // NewModel creates a new Hive game TUI model.
@@ -79,6 +80,16 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Share prompt takes priority when active
+		if m.sharePrompt != nil {
+			prompt, quit := m.sharePrompt.HandleKey(msg.String())
+			m.sharePrompt = &prompt
+			if quit {
+				return m, tea.Quit
+			}
+			return m, nil
+		}
+
 		// If given up, only allow quit
 		if m.givenUp {
 			if msg.Type == tea.KeyEsc || msg.Type == tea.KeyCtrlC {
@@ -94,6 +105,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.showGiveUp = false
 				m.givenUp = true
 				m.status = ""
+				sp := common.NewSharePrompt(m.Game.Summary())
+				m.sharePrompt = &sp
 				return m, nil
 			case tea.KeyEsc, tea.KeyCtrlC:
 				m.showGiveUp = false
@@ -106,6 +119,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						m.showGiveUp = false
 						m.givenUp = true
 						m.status = ""
+						sp := common.NewSharePrompt(m.Game.Summary())
+						m.sharePrompt = &sp
 						return m, nil
 					}
 				}
@@ -117,9 +132,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Won the game — only allow quit
 		if m.Game.Score == m.Game.MaxScore {
-			if msg.Type == tea.KeyEsc || msg.Type == tea.KeyCtrlC {
-				return m, tea.Quit
-			}
+			// Initialize share prompt once on transition
+			sp := common.NewSharePrompt(m.Game.Summary())
+			m.sharePrompt = &sp
 			return m, nil
 		}
 
@@ -249,7 +264,9 @@ func (m Model) View() string {
 	}
 
 	// Help
-	if m.givenUp || m.Game.Score == m.Game.MaxScore {
+	if m.sharePrompt != nil {
+		b.WriteString(m.sharePrompt.View())
+	} else if m.givenUp || m.Game.Score == m.Game.MaxScore {
 		b.WriteString(common.HelpStyle.Render("Press ESC to quit."))
 	} else {
 		b.WriteString(common.HelpStyle.Render(

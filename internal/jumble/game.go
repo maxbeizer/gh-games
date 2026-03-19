@@ -2,9 +2,12 @@ package jumble
 
 import (
 	"errors"
+	"fmt"
 	"math/rand"
 	"strings"
 	"time"
+
+	"github.com/maxbeizer/gh-games/internal/common"
 )
 
 // roundLengths defines the word length for each of the 5 rounds (progressive difficulty).
@@ -210,4 +213,26 @@ func ScrambleWord(word string) string {
 	copy(rotated, runes[1:])
 	rotated[len(rotated)-1] = runes[0]
 	return string(rotated)
+}
+
+// Summary returns a spoiler-free shareable result.
+func (g *Game) Summary() common.ShareResult {
+	solved := 0
+	hints := 0
+	for _, r := range g.Rounds {
+		if r.Solved {
+			solved++
+		}
+		hints += r.HintsUsed
+	}
+
+	return common.ShareResult{
+		Game:  "🔀 Jumble",
+		Title: "🔀 Jumble",
+		Lines: []string{
+			fmt.Sprintf("Score: %d", g.TotalScore),
+			fmt.Sprintf("Rounds: %d/%d solved", solved, len(g.Rounds)),
+			fmt.Sprintf("Hints used: %d", hints),
+		},
+	}
 }

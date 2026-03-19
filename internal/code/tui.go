@@ -25,9 +25,10 @@ var emptySlotStyle = lipgloss.NewStyle().
 
 // Model is the Bubbletea model for the Code Breaker TUI.
 type Model struct {
-	Game  *Game
-	input []Color // current guess being built (0-4 colors)
-	err   string
+	Game        *Game
+	input       []Color // current guess being built (0-4 colors)
+	err         string
+	sharePrompt *common.SharePrompt
 }
 
 // NewModel creates a new TUI model with a random secret.
@@ -53,6 +54,15 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		if m.sharePrompt != nil {
+			prompt, quit := m.sharePrompt.HandleKey(msg.String())
+			m.sharePrompt = &prompt
+			if quit {
+				return m, tea.Quit
+			}
+			return m, nil
+		}
+
 		if m.Game.IsOver() {
 			return m, tea.Quit
 		}
@@ -77,6 +87,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.Game.MakeGuess(code)
 			m.input = m.input[:0]
 			m.err = ""
+			if m.Game.IsOver() {
+				sp := common.NewSharePrompt(m.Game.Summary())
+				m.sharePrompt = &sp
+			}
 
 		default:
 			c, ok := keyToColor(msg.String())
@@ -152,7 +166,11 @@ func (m Model) View() string {
 				len(m.Game.Guesses),
 				pluralize(len(m.Game.Guesses)))))
 		b.WriteString("\n\n")
-		b.WriteString(common.HelpStyle.Render("Press any key to quit"))
+		if m.sharePrompt != nil {
+			b.WriteString(m.sharePrompt.View())
+		} else {
+			b.WriteString(common.HelpStyle.Render("Press any key to quit"))
+		}
 		b.WriteString("\n")
 		return b.String()
 	}
@@ -164,7 +182,11 @@ func (m Model) View() string {
 			b.WriteString(ColorSymbol(c))
 		}
 		b.WriteString("\n\n")
-		b.WriteString(common.HelpStyle.Render("Press any key to quit"))
+		if m.sharePrompt != nil {
+			b.WriteString(m.sharePrompt.View())
+		} else {
+			b.WriteString(common.HelpStyle.Render("Press any key to quit"))
+		}
 		b.WriteString("\n")
 		return b.String()
 	}

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"unicode"
+
+	"github.com/maxbeizer/gh-games/internal/common"
 )
 
 const MaxWrong = 6
@@ -115,4 +117,23 @@ func (g *Game) IsCorrect(r rune) bool {
 // IsWrongGuess reports whether a guessed letter was wrong.
 func (g *Game) IsWrongGuess(r rune) bool {
 	return g.wrong[unicode.ToUpper(r)]
+}
+
+// Summary returns a spoiler-free shareable result.
+func (g *Game) Summary() common.ShareResult {
+	var result string
+	if g.IsWon() {
+		result = "Won! ✓"
+	} else {
+		result = "Lost ❌"
+	}
+
+	return common.ShareResult{
+		Game:  "☠️ Hang",
+		Title: "☠️ Hang",
+		Lines: []string{
+			result,
+			fmt.Sprintf("Wrong guesses: %d/%d", g.WrongCount(), MaxWrong),
+		},
+	}
 }

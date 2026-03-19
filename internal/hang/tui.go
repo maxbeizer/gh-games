@@ -96,9 +96,10 @@ var (
 
 // Model is the Bubbletea model for hangman.
 type Model struct {
-	Game    *Game
-	status  string
-	quitted bool
+	Game        *Game
+	status      string
+	quitted     bool
+	sharePrompt *common.SharePrompt
 }
 
 // NewModel creates a new hangman TUI model.
@@ -113,6 +114,15 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		if m.sharePrompt != nil {
+			prompt, quit := m.sharePrompt.HandleKey(msg.String())
+			m.sharePrompt = &prompt
+			if quit {
+				return m, tea.Quit
+			}
+			return m, nil
+		}
+
 		switch msg.Type {
 		case tea.KeyCtrlC, tea.KeyEsc:
 			m.quitted = true
@@ -130,12 +140,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if correct {
 					if m.Game.IsWon() {
 						m.status = "🎉 You got it!"
+						sp := common.NewSharePrompt(m.Game.Summary())
+						m.sharePrompt = &sp
 					} else {
 						m.status = fmt.Sprintf("✓ '%c' is in the word!", r)
 					}
 				} else {
 					if m.Game.IsLost() {
 						m.status = fmt.Sprintf("💀 The word was: %s", m.Game.Target)
+						sp := common.NewSharePrompt(m.Game.Summary())
+						m.sharePrompt = &sp
 					} else {
 						m.status = fmt.Sprintf("✗ No '%c' — %d/%d wrong", r, m.Game.WrongCount(), MaxWrong)
 					}
@@ -186,11 +200,27 @@ func (m Model) View() string {
 
 	// Game over or help
 	if m.Game.IsWon() {
-		b.WriteString(common.SuccessStyle.Render("  🎉 You win! Press ENTER or ESC to exit."))
+		b.WriteString(common.SuccessStyle.Render("  🎉 You win!"))
 		b.WriteString("\n")
+		if m.sharePrompt != nil {
+			b.WriteString("  ")
+			b.WriteString(m.sharePrompt.View())
+			b.WriteString("\n")
+		} else {
+			b.WriteString(common.HelpStyle.Render("  Press ENTER or ESC to exit."))
+			b.WriteString("\n")
+		}
 	} else if m.Game.IsLost() {
-		b.WriteString(common.ErrorStyle.Render("  💀 Game over! Press ENTER or ESC to exit."))
+		b.WriteString(common.ErrorStyle.Render("  💀 Game over!"))
 		b.WriteString("\n")
+		if m.sharePrompt != nil {
+			b.WriteString("  ")
+			b.WriteString(m.sharePrompt.View())
+			b.WriteString("\n")
+		} else {
+			b.WriteString(common.HelpStyle.Render("  Press ENTER or ESC to exit."))
+			b.WriteString("\n")
+		}
 	} else {
 		b.WriteString(common.HelpStyle.Render("  Press a letter to guess · ESC to quit"))
 		b.WriteString("\n")

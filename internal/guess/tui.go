@@ -20,6 +20,7 @@ type Model struct {
 	input         string
 	err           string
 	validateWords bool
+	sharePrompt   *common.SharePrompt
 }
 
 // NewModel creates a new Guess game TUI model.
@@ -37,6 +38,15 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		if m.sharePrompt != nil {
+			prompt, quit := m.sharePrompt.HandleKey(msg.String())
+			m.sharePrompt = &prompt
+			if quit {
+				return m, tea.Quit
+			}
+			return m, nil
+		}
+
 		if m.Game.IsOver() {
 			if msg.Type == tea.KeyEsc || msg.Type == tea.KeyCtrlC {
 				return m, tea.Quit
@@ -71,6 +81,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.input = ""
 			m.err = ""
+			if m.Game.IsOver() {
+				sp := common.NewSharePrompt(m.Game.Summary())
+				m.sharePrompt = &sp
+			}
 
 		case tea.KeyRunes:
 			for _, r := range msg.Runes {
@@ -109,7 +123,11 @@ func (m Model) View() string {
 				fmt.Sprintf("😔 The word was %s", m.Game.Target)))
 		}
 		b.WriteString("\n")
-		b.WriteString(common.HelpStyle.Render("Press ESC to quit."))
+		if m.sharePrompt != nil {
+			b.WriteString(m.sharePrompt.View())
+		} else {
+			b.WriteString(common.HelpStyle.Render("Press ESC to quit."))
+		}
 	} else {
 		if m.err != "" {
 			b.WriteString(common.ErrorStyle.Render(m.err))

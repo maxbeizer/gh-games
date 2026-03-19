@@ -3,6 +3,8 @@ package guess
 import (
 	"fmt"
 	"strings"
+
+	"github.com/maxbeizer/gh-games/internal/common"
 )
 
 type LetterState int
@@ -122,4 +124,34 @@ func CheckGuess(target, guess string) [5]LetterState {
 	}
 
 	return states
+}
+
+// Summary returns a spoiler-free shareable result.
+func (g *Game) Summary() common.ShareResult {
+	title := fmt.Sprintf("🟩 Guess %d/6", len(g.Guesses))
+	if g.IsLost() {
+		title += " ❌"
+	}
+
+	lines := make([]string, len(g.Guesses))
+	for i, gr := range g.Guesses {
+		var b strings.Builder
+		for _, s := range gr.States {
+			switch s {
+			case Correct:
+				b.WriteString("🟩")
+			case Present:
+				b.WriteString("🟨")
+			default:
+				b.WriteString("⬛")
+			}
+		}
+		lines[i] = b.String()
+	}
+
+	return common.ShareResult{
+		Game:  "🟩 Guess",
+		Title: title,
+		Lines: lines,
+	}
 }

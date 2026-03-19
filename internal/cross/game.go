@@ -1,9 +1,12 @@
 package cross
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 	"unicode"
+
+	"github.com/maxbeizer/gh-games/internal/common"
 )
 
 // Direction represents the cursor movement direction.
@@ -259,4 +262,23 @@ func (g *Game) currentClueNumber() int {
 		}
 	}
 	return g.CellNumber(r, c)
+}
+
+// Summary returns a spoiler-free shareable result.
+func (g *Game) Summary() common.ShareResult {
+	var line string
+	if g.IsCorrect() {
+		d := g.Elapsed()
+		mins := int(d.Minutes())
+		secs := int(d.Seconds()) % 60
+		line = fmt.Sprintf("Solved in %d:%02d", mins, secs)
+	} else {
+		line = "Incomplete"
+	}
+
+	return common.ShareResult{
+		Game:  "📰 Cross",
+		Title: "📰 Cross",
+		Lines: []string{line},
+	}
 }

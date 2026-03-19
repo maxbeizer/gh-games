@@ -8,6 +8,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/maxbeizer/gh-games/internal/common"
 )
 
 // tickMsg is sent every second to update the timer.
@@ -15,10 +16,11 @@ type tickMsg time.Time
 
 // Model is the bubbletea model for the crossword TUI.
 type Model struct {
-	Game    *Game
-	status  string
-	checked bool
-	solved  bool
+	Game        *Game
+	status      string
+	checked     bool
+	solved      bool
+	sharePrompt *common.SharePrompt
 }
 
 // NewModel creates a new crossword TUI model.
@@ -49,6 +51,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case tea.KeyMsg:
 		if m.solved {
+			if m.sharePrompt != nil {
+				prompt, quit := m.sharePrompt.HandleKey(msg.String())
+				m.sharePrompt = &prompt
+				if quit {
+					return m, tea.Quit
+				}
+				return m, nil
+			}
 			switch msg.String() {
 			case "q", "esc", "ctrl+c":
 				return m, tea.Quit
@@ -74,6 +84,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.solved = true
 				m.Game.Completed = true
 				m.status = "🎉 Solved!"
+				sp := common.NewSharePrompt(m.Game.Summary())
+				m.sharePrompt = &sp
 			} else if hasErrors {
 				m.status = "❌ Some letters are wrong (shown in red)"
 			} else {
@@ -115,6 +127,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.solved = true
 					m.Game.Completed = true
 					m.status = "🎉 Solved!"
+					sp := common.NewSharePrompt(m.Game.Summary())
+					m.sharePrompt = &sp
 					return m, nil
 				}
 				m.Game.Advance()
@@ -251,8 +265,12 @@ func (m Model) View() string {
 	}
 
 	// Help
-	help := "Type to fill · ↑↓←→ move · Tab toggle direction · Ctrl+K check · ESC quit"
-	sb.WriteString("  " + dim.Render(help) + "\n")
+	if m.sharePrompt != nil {
+		sb.WriteString("  " + m.sharePrompt.View() + "\n")
+	} else {
+		help := "Type to fill · ↑↓←→ move · Tab toggle direction · Ctrl+K check · ESC quit"
+		sb.WriteString("  " + dim.Render(help) + "\n")
+	}
 
 	return sb.String()
 }
