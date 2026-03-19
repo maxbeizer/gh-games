@@ -143,42 +143,54 @@ func (m Model) View() string {
 		return b.String()
 	}
 
-	// Word grid
+	// Word grid — all cells use the same border to keep alignment consistent
 	words := m.game.RemainingWords
 	cellWidth := 12
-	for i, w := range words {
-		isSelected := m.game.Selected[w]
-		isCursor := i == m.cursor
 
-		cell := common.CellStyle(cellWidth, 1)
-		label := w
+	baseCell := lipgloss.NewStyle().
+		Width(cellWidth).
+		Height(1).
+		Align(lipgloss.Center, lipgloss.Center).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(common.ColorGray).
+		Foreground(common.ColorWhite)
 
-		if isCursor && isSelected {
-			cell = cell.
-				Background(lipgloss.Color("#555555")).
-				Foreground(common.ColorWhite).
-				Bold(true).
-				Border(lipgloss.ThickBorder()).
-				BorderForeground(common.ColorWhite)
-			label = "▸" + label
-		} else if isCursor {
-			cell = cell.
-				Background(lipgloss.Color("#555555")).
-				Foreground(common.ColorWhite).
-				Bold(true)
-			label = "▸" + label
-		} else if isSelected {
-			cell = cell.
-				Border(lipgloss.ThickBorder()).
-				BorderForeground(common.ColorWhite)
+	for row := 0; row < (len(words)+gridCols-1)/gridCols; row++ {
+		var cells []string
+		for col := 0; col < gridCols; col++ {
+			i := row*gridCols + col
+			if i >= len(words) {
+				break
+			}
+			w := words[i]
+			isSelected := m.game.Selected[w]
+			isCursor := i == m.cursor
+
+			cell := baseCell
+
+			switch {
+			case isCursor && isSelected:
+				cell = cell.
+					Background(lipgloss.Color("#555555")).
+					Bold(true).
+					BorderForeground(common.ColorYellow).
+					Border(lipgloss.ThickBorder())
+			case isCursor:
+				cell = cell.
+					Background(lipgloss.Color("#555555")).
+					Bold(true).
+					BorderForeground(common.ColorWhite).
+					Border(lipgloss.ThickBorder())
+			case isSelected:
+				cell = cell.
+					BorderForeground(common.ColorYellow).
+					Bold(true)
+			}
+
+			cells = append(cells, cell.Render(w))
 		}
-
-		b.WriteString(cell.Render(label))
-		if (i+1)%gridCols == 0 {
-			b.WriteString("\n")
-		} else {
-			b.WriteString(" ")
-		}
+		b.WriteString(lipgloss.JoinHorizontal(lipgloss.Top, cells...))
+		b.WriteString("\n")
 	}
 	b.WriteString("\n")
 
