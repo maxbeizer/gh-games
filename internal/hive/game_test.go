@@ -2,6 +2,7 @@ package hive
 
 import (
 	"testing"
+	"time"
 )
 
 // testLetters is a fixed set of 7 letters for deterministic tests.
@@ -193,4 +194,18 @@ func TestProgress(t *testing.T) {
 	if g.Progress() != 0.5 {
 		t.Errorf("expected progress=0.5, got=%f", g.Progress())
 	}
+}
+
+func TestNewGamePerformance(t *testing.T) {
+	start := time.Now()
+	g := NewGame()
+	elapsed := time.Since(start)
+
+	if elapsed > 2*time.Second {
+		t.Errorf("NewGame() took %v, want < 2s", elapsed)
+	}
+	if len(g.AllValid) == 0 {
+		t.Error("NewGame() produced no valid words")
+	}
+	t.Logf("NewGame() completed in %v with %d valid words", elapsed, len(g.AllValid))
 }

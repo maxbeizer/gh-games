@@ -7,8 +7,8 @@ import (
 
 func TestDictSize(t *testing.T) {
 	size := DictSize()
-	if size < 4000 {
-		t.Errorf("DictSize() = %d, want >= 4000", size)
+	if size < 100000 {
+		t.Errorf("DictSize() = %d, want >= 100000", size)
 	}
 	t.Logf("Dictionary contains %d words", size)
 }
