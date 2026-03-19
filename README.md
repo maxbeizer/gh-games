@@ -10,28 +10,30 @@ gh extension install maxbeizer/gh-games
 
 ## Games
 
-### 🟩 Guess
+| Command | Game |
+|---------|------|
+| `gh games guess` | 🟩 Guess the 5-letter word in 6 tries |
+| `gh games group` | 🔗 Find four groups of four related words |
+| `gh games hive` | 🐝 Find words from 7 letters, center required |
+| `gh games hang` | ☠️ Classic hangman |
+| `gh games jumble` | 🔀 Unscramble the jumbled word |
+| `gh games ladder` | 🪜 Change one letter at a time to reach the target |
+| `gh games trivia` | 🧠 10-question trivia quiz |
+| `gh games code` | 🔐 Crack the secret color code |
+| `gh games cross` | 📰 5×5 mini crossword |
 
-Guess the hidden 5-letter word in 6 tries. After each guess, letters are colored:
-- 🟩 **Green** — correct letter, correct position
-- 🟨 **Yellow** — correct letter, wrong position  
-- ⬜ **Gray** — letter not in the word
+## Sharing Results
+
+After each game, share your spoiler-free results:
+
+- **Clipboard** — press `C` to copy (always available)
+- **Slack** — press `S` to post via [gh-slack](https://github.com/github/gh-slack) (requires setup)
+
+### Slack setup
 
 ```sh
-gh games guess           # Daily word (same for everyone today)
-gh games guess --random  # Fresh random word
-gh games guess --hard    # Guesses must be real words
-```
-
-### 🔗 Group
-
-Find four groups of four related words among sixteen. Groups are color-coded by difficulty:
-- 🟨 Yellow (easy) → 🟩 Green → 🟦 Blue → 🟪 Purple (expert)
-
-4 mistakes and it's game over!
-
-```sh
-gh games group
+gh extension install github/gh-slack  # if not already installed
+gh games config                        # interactive setup
 ```
 
 ## Development
@@ -45,6 +47,4 @@ make install-local # Install from local checkout
 
 ## License
 
-MIT
-
-This project is not affiliated with the New York Times or any other company ⚖️
+MIT · Not affiliated with the New York Times or any other company ⚖️
