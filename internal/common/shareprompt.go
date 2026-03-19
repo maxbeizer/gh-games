@@ -45,7 +45,7 @@ func (s SharePrompt) HandleKey(key string) (SharePrompt, bool) {
 			s.State = ShareDone
 		case "s":
 			if s.slackReady {
-				err := PostViaGhSlack(s.Config.Share.SlackChannel, s.Result.String())
+				err := PostViaGhSlack(s.Config.Share.SlackChannel, s.Config.Share.SlackTeam, s.Result.String())
 				if err != nil {
 					s.Message = "✗ " + err.Error()
 				} else {

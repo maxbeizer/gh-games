@@ -61,9 +61,13 @@ func IsGhSlackInstalled() bool {
 }
 
 // PostViaGhSlack sends a message to a Slack channel using the gh-slack extension.
-func PostViaGhSlack(channel, message string) error {
+func PostViaGhSlack(channel, team, message string) error {
 	channel = strings.TrimPrefix(channel, "#")
-	cmd := exec.Command("gh", "slack", "send", "-c", channel, "-m", message)
+	args := []string{"slack", "send", "-c", channel, "-m", message}
+	if team != "" {
+		args = append(args, "-t", team)
+	}
+	cmd := exec.Command("gh", args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("gh-slack send failed: %s: %w", string(output), err)

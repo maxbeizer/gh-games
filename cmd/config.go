@@ -46,20 +46,27 @@ func interactiveConfig() error {
 		fmt.Println("✗ gh-slack is not installed (install with: gh extension install github/gh-slack)")
 	}
 
-	fmt.Print("Slack channel name (leave empty to skip): ")
+	fmt.Print("Slack team/workspace name (e.g. github, leave empty to skip): ")
 	scanner := bufio.NewScanner(os.Stdin)
+	var team string
+	if scanner.Scan() {
+		team = scanner.Text()
+	}
+
+	fmt.Print("Slack channel name (leave empty to skip): ")
 	var channel string
 	if scanner.Scan() {
 		channel = scanner.Text()
 	}
 
-	if channel == "" {
-		fmt.Println("No channel set — skipping.")
+	if channel == "" && team == "" {
+		fmt.Println("No Slack config set — skipping.")
 		return nil
 	}
 
 	cfg := common.LoadConfig()
 	cfg.Share.SlackChannel = channel
+	cfg.Share.SlackTeam = team
 	if err := common.SaveConfig(cfg); err != nil {
 		return fmt.Errorf("saving config: %w", err)
 	}
@@ -81,6 +88,11 @@ func showConfig() error {
 	if ch == "" {
 		ch = "(not set)"
 	}
+	tm := cfg.Share.SlackTeam
+	if tm == "" {
+		tm = "(not set)"
+	}
+	fmt.Printf("Slack team:    %s\n", tm)
 	fmt.Printf("Slack channel: %s\n", ch)
 
 	if common.IsGhSlackInstalled() {

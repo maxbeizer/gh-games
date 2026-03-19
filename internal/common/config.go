@@ -11,6 +11,7 @@ import (
 // ShareConfig holds sharing preferences.
 type ShareConfig struct {
 	SlackChannel string // channel name for gh-slack
+	SlackTeam    string // Slack workspace/team name for gh-slack
 }
 
 // Config is the top-level application configuration.
@@ -40,6 +41,9 @@ func SaveConfig(cfg Config) error {
 	b.WriteString("[share]\n")
 	if cfg.Share.SlackChannel != "" {
 		b.WriteString(fmt.Sprintf("slack_channel = \"%s\"\n", cfg.Share.SlackChannel))
+	}
+	if cfg.Share.SlackTeam != "" {
+		b.WriteString(fmt.Sprintf("slack_team = \"%s\"\n", cfg.Share.SlackTeam))
 	}
 	return os.WriteFile(path, []byte(b.String()), 0o644)
 }
@@ -74,6 +78,9 @@ func loadConfigFrom(path string) Config {
 
 		if key == "slack_channel" {
 			cfg.Share.SlackChannel = val
+		}
+		if key == "slack_team" {
+			cfg.Share.SlackTeam = val
 		}
 	}
 
