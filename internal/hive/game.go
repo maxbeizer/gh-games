@@ -197,44 +197,31 @@ func uniqueLetters(word string) []rune {
 	return out
 }
 
-// randomPangramCandidate picks a random valid dictionary word with exactly 7 unique letters.
-func randomPangramCandidate() string {
-	// Use FindValidWords with a broad set won't work here; we need a word
-	// with exactly 7 unique letters. We'll try random letter combos via the
-	// dictionary. Instead, pick random 7-letter sets and check for pangrams.
-	// A simpler approach: generate random letters, find words, look for pangrams.
-	vowels := []rune("aeiou")
-	consonants := []rune("bcdfghjklmnpqrstvwxyz")
+// pangramCandidates holds all dictionary words with exactly 7 unique letters.
+var pangramCandidates []string
 
-	// Pick 2-3 vowels and 4-5 consonants for a good mix
-	numVowels := 2 + rand.Intn(2) // 2 or 3
-	numConsonants := 7 - numVowels
+func init() {
+	// This runs after the dictionary init() populates the dictionary map.
+	// We need to defer this to be safe with init ordering.
+}
 
-	var letters [7]rune
-	idx := 0
-
-	// Pick unique vowels
-	vPerm := rand.Perm(len(vowels))
-	for i := 0; i < numVowels; i++ {
-		letters[idx] = vowels[vPerm[i]]
-		idx++
+func ensurePangramCandidates() {
+	if pangramCandidates != nil {
+		return
 	}
-
-	// Pick unique consonants
-	cPerm := rand.Perm(len(consonants))
-	for i := 0; i < numConsonants; i++ {
-		letters[idx] = consonants[cPerm[i]]
-		idx++
-	}
-
-	center := letters[0]
-	words := FindValidWords(letters, center)
-
-	// Look for a pangram among the found words
-	for _, w := range words {
-		if isPangramWord(w, letters) {
-			return w
+	pangramCandidates = make([]string, 0, 500)
+	for word := range dictionary {
+		if len(uniqueLetters(word)) == 7 {
+			pangramCandidates = append(pangramCandidates, word)
 		}
 	}
-	return ""
+}
+
+// randomPangramCandidate picks a random dictionary word with exactly 7 unique letters.
+func randomPangramCandidate() string {
+	ensurePangramCandidates()
+	if len(pangramCandidates) == 0 {
+		return ""
+	}
+	return pangramCandidates[rand.Intn(len(pangramCandidates))]
 }
