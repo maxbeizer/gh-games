@@ -62,6 +62,7 @@ func IsGhSlackInstalled() bool {
 
 // PostViaGhSlack sends a message to a Slack channel using the gh-slack extension.
 func PostViaGhSlack(channel, message string) error {
+	channel = strings.TrimPrefix(channel, "#")
 	cmd := exec.Command("gh", "slack", "send", "-c", channel, "-m", message)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
