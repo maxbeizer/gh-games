@@ -1,7 +1,7 @@
-project_name: gh-extension-template
+project_name: gh-games
 
 builds:
-  - binary: gh-extension-template
+  - binary: gh-games
     goos:
       - darwin
       - linux

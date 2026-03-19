@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/maxbeizer/gh-games/cmd"
 	"github.com/spf13/cobra"
 )
 
@@ -31,13 +31,13 @@ func main() {
 	}()
 
 	rootCmd := &cobra.Command{
-		Use:   "gh-extension-template",
-		Short: "TODO: describe your extension",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println("Hello from gh-extension-template! Replace this with your implementation.")
-			return nil
-		},
+		Use:   "gh-games",
+		Short: "🎮 Terminal games as a GitHub CLI extension",
+		Long:  "Play fun terminal games right from your GitHub CLI. Includes Wordle, Connections, and more!",
 	}
+
+	rootCmd.AddCommand(cmd.NewGuessCmd())
+	rootCmd.AddCommand(cmd.NewGroupCmd())
 
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		userMessages.Printf("error: %v", err)

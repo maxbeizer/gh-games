@@ -1,4 +1,4 @@
-module github.com/maxbeizer/gh-extension-template
+module github.com/maxbeizer/gh-games
 
 go 1.24.13
 
