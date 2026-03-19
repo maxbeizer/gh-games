@@ -2,6 +2,7 @@ package common
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -17,14 +18,35 @@ type Config struct {
 	Share ShareConfig
 }
 
+// ConfigPath returns the path to the config file.
+func ConfigPath() string {
+	home, _ := os.UserHomeDir()
+	return filepath.Join(home, ".config", "gh-games", "config.toml")
+}
+
 // LoadConfig loads config from ~/.config/gh-games/config.toml.
 // Returns a zero-value Config if the file doesn't exist.
 func LoadConfig() Config {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return Config{}
+	return loadConfigFrom(ConfigPath())
+}
+
+// SaveConfig writes config to ~/.config/gh-games/config.toml.
+func SaveConfig(cfg Config) error {
+	path := ConfigPath()
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
 	}
-	return loadConfigFrom(filepath.Join(home, ".config", "gh-games", "config.toml"))
+	var b strings.Builder
+	b.WriteString("[share]\n")
+	if cfg.Share.SlackChannel != "" {
+		b.WriteString(fmt.Sprintf("slack_channel = \"%s\"\n", cfg.Share.SlackChannel))
+	}
+	return os.WriteFile(path, []byte(b.String()), 0o644)
+}
+
+// DeleteConfig removes the config file.
+func DeleteConfig() error {
+	return os.Remove(ConfigPath())
 }
 
 // loadConfigFrom parses a minimal TOML config from the given path.

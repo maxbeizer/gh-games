@@ -45,6 +45,7 @@ func main() {
 	rootCmd.AddCommand(cmd.NewHangCmd())
 	rootCmd.AddCommand(cmd.NewJumbleCmd())
 	rootCmd.AddCommand(cmd.NewLadderCmd())
+	rootCmd.AddCommand(cmd.NewConfigCmd())
 
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		userMessages.Printf("error: %v", err)
