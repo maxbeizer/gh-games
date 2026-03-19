@@ -39,6 +39,12 @@ func main() {
 	rootCmd.AddCommand(cmd.NewGuessCmd())
 	rootCmd.AddCommand(cmd.NewGroupCmd())
 	rootCmd.AddCommand(cmd.NewHiveCmd())
+	rootCmd.AddCommand(cmd.NewTriviaCmd())
+	rootCmd.AddCommand(cmd.NewCrossCmd())
+	rootCmd.AddCommand(cmd.NewCodeCmd())
+	rootCmd.AddCommand(cmd.NewHangCmd())
+	rootCmd.AddCommand(cmd.NewJumbleCmd())
+	rootCmd.AddCommand(cmd.NewLadderCmd())
 
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		userMessages.Printf("error: %v", err)
