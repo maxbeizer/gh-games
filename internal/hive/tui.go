@@ -165,13 +165,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if !unicode.IsLetter(r) {
 					continue
 				}
-				lower := unicode.ToLower(r)
-				if !m.letterSet[lower] {
-					m.status = fmt.Sprintf("✗ Letter '%c' is not in the puzzle", unicode.ToUpper(r))
+				upper := unicode.ToUpper(r)
+				if !m.letterSet[upper] {
+					m.status = fmt.Sprintf("✗ Letter '%c' is not in the puzzle", upper)
 					m.statusIsError = true
 					continue
 				}
-				m.input += string(lower)
+				m.input += string(upper)
 				// Clear status on new typing
 				if m.statusIsError {
 					m.status = ""
